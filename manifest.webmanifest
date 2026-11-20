@@ -1,0 +1,16 @@
+{
+  "name": "제조본부 업무 시스템",
+  "short_name": "업무 시스템",
+  "description": "생산관리팀 업무 프로그램 (소모품 구매, 소모성 원자재)",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6fa",
+  "theme_color": "#ffffff",
+  "lang": "ko",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

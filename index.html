@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>제조본부 업무 시스템</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b5bfd'/%3E%3Ctext x='16' y='22' font-size='17' font-family='Arial' font-weight='800' fill='white' text-anchor='middle'%3EN%3C/text%3E%3C/svg%3E">
   <style>
     :root {
@@ -134,7 +137,7 @@
   </div>
 
   <script>
-    var SHELL_BUILD = 'v1.1 / 2026-11-20 GitHub';
+    var SHELL_BUILD = 'v1.2 / 2026-11-20 GitHub';
     var GAS = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002F';
 
     var IC = {
@@ -365,6 +368,10 @@
       }).join(' &middot; ');
       document.getElementById('foot').innerHTML = '<b>새 창으로 열기</b>' + links
         + '<div style="margin-top:6px;color:var(--muted);font-size:11px">build ' + SHELL_BUILD + '</div>';
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
     }
 
     (function start() {
