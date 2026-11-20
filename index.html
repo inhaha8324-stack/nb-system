@@ -5,11 +5,11 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>제조본부 업무 시스템</title>
+  <title>제조본부 통합관리 시스템</title>
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b5bfd'/%3E%3Ctext x='16' y='22' font-size='17' font-family='Arial' font-weight='800' fill='white' text-anchor='middle'%3EN%3C/text%3E%3C/svg%3E">
+  <link rel="icon" href="favicon.ico">
   <style>
     :root {
       --bg:#f4f6fa; --card:#ffffff; --line:#e8ebf1; --line2:#f0f2f6; --text:#111827; --sub:#4b5563; --muted:#8b93a1;
@@ -30,6 +30,7 @@
     .logo { display: flex; gap: 10px; align-items: center; padding: 2px 8px 22px; }
     .logo .mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
                   display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; box-shadow: 0 4px 12px rgba(59,91,253,.3); }
+    .logo-img { width: 38px; height: 38px; flex-shrink: 0; object-fit: contain; }
     .logo b { display: block; font-size: 14px; font-weight: 700; line-height: 1.25; }
     .logo small { display: block; color: var(--muted); font-size: 11px; font-weight: 500; margin-top: 2px; }
     .sec { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: .04em; padding: 6px 10px; margin-top: 6px; }
@@ -112,7 +113,7 @@
 
   <div class="app">
     <aside class="side">
-      <div class="logo"><div class="mark">N</div><div><b>제조본부 업무 시스템</b><small>생산관리팀</small></div></div>
+      <div class="logo"><img class="logo-img" src="icons/icon-64.png" alt=""><div><b>제조본부 통합관리 시스템</b><small>생산관리팀</small></div></div>
       <div class="sec">업무</div>
       <div id="menu"></div>
       <div class="soon">
@@ -137,7 +138,7 @@
   </div>
 
   <script>
-    var SHELL_BUILD = 'v1.2 / 2026-11-20 GitHub';
+    var SHELL_BUILD = 'v1.3 / 2026-11-20 GitHub';
     var GAS = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002F';
 
     var IC = {
@@ -207,7 +208,7 @@
           + icon(x[1], 20) + x[2] + '</button>';
       }).join('');
       document.getElementById('topTitle').innerHTML = '<small>' + a.name + '</small>' + p[2];
-      document.title = p[2] + ' - 제조본부 업무 시스템';
+      document.title = p[2] + ' - 제조본부 통합관리 시스템';
     }
 
     function toggleGrp(id) { openGrp[id] = !openGrp[id]; menu(); }
