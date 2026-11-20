@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>제조본부 업무 시스템</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b5bfd'/%3E%3Ctext x='16' y='22' font-size='17' font-family='Arial' font-weight='800' fill='white' text-anchor='middle'%3EN%3C/text%3E%3C/svg%3E">
+  <style>
+    :root {
+      --bg:#f4f6fa; --card:#ffffff; --line:#e8ebf1; --line2:#f0f2f6; --text:#111827; --sub:#4b5563; --muted:#8b93a1;
+      --accent:#3b5bfd; --accent-2:#6f8bff; --accent-soft:#eef1ff; --ink:#0f172a;
+      --ok:#12a150; --ng:#e5484d; --ng-soft:#fdeced;
+      --side-w:240px; --top-h:52px; --tab-h:58px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.45; letter-spacing: -0.01em;
+           font-family: "Pretendard", -apple-system, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; -webkit-font-smoothing: antialiased;
+           overflow: hidden; }
+    svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .app { display: flex; height: 100vh; height: 100dvh; }
+
+    .side { width: var(--side-w); background: #fff; border-right: 1px solid var(--line); padding: 22px 14px 14px; flex-shrink: 0;
+            height: 100%; display: flex; flex-direction: column; overflow-y: auto; }
+    .logo { display: flex; gap: 10px; align-items: center; padding: 2px 8px 22px; }
+    .logo .mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
+                  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; box-shadow: 0 4px 12px rgba(59,91,253,.3); }
+    .logo b { display: block; font-size: 14px; font-weight: 700; line-height: 1.25; }
+    .logo small { display: block; color: var(--muted); font-size: 11px; font-weight: 500; margin-top: 2px; }
+    .sec { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: .04em; padding: 6px 10px; margin-top: 6px; }
+    .grp { margin-bottom: 4px; }
+    .grp-h { display: flex; gap: 10px; align-items: center; width: 100%; background: none; border: 0; color: var(--text);
+             font: inherit; font-weight: 700; padding: 10px 12px; border-radius: 10px; cursor: pointer; text-align: left; }
+    .grp-h:hover { background: #f5f6f9; }
+    .grp-h .chev { margin-left: auto; color: var(--muted); transition: transform .15s; display: flex; }
+    .grp.open .grp-h .chev { transform: rotate(90deg); }
+    .grp-b { display: none; padding: 2px 0 6px 18px; position: relative; }
+    .grp-b::before { content: ""; position: absolute; left: 20px; top: 4px; bottom: 10px; width: 1px; background: var(--line); }
+    .grp.open .grp-b { display: block; }
+    .grp-b button { display: flex; gap: 8px; align-items: center; width: 100%; background: none; border: 0; color: var(--sub);
+                    font: inherit; font-size: 13.5px; font-weight: 500; padding: 8px 12px 8px 16px; border-radius: 9px; cursor: pointer;
+                    text-align: left; margin-bottom: 1px; }
+    .grp-b button:hover { background: #f5f6f9; color: var(--text); }
+    .grp-b button.on { background: var(--ink); color: #fff; font-weight: 600; }
+    .soon { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; color: #b4bac6; font-weight: 600;
+            border: 1px dashed var(--line); margin-top: 6px; font-size: 13px; }
+    .foot { margin-top: auto; padding: 12px; border-radius: 12px; background: var(--bg); font-size: 12px; color: var(--sub); }
+    .foot b { color: var(--text); display: block; font-size: 12.5px; margin-bottom: 2px; }
+    .foot a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .foot a:hover { text-decoration: underline; }
+
+    .topbar, .tabbar, .drawer-bg { display: none; }
+
+    main { flex: 1; min-width: 0; position: relative; height: 100%; }
+    main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: var(--bg); visibility: hidden; }
+    main iframe.on { visibility: visible; }
+    .loader { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 14px;
+              background: var(--bg); color: var(--sub); font-size: 13px; z-index: 5; text-align: center; padding: 20px; }
+    .loader.on { display: flex; }
+    .spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #dfe4f0; border-top-color: var(--accent); animation: sp 0.8s linear infinite; }
+    @keyframes sp { to { transform: rotate(360deg); } }
+    .loader .slow { display: none; font-size: 12px; color: var(--muted); }
+    .loader.late .slow { display: block; }
+    .loader a { color: var(--accent); font-weight: 600; }
+
+    .scan { position: fixed; inset: 0; z-index: 100; background: #000; display: none; flex-direction: column; }
+    .scan.on { display: flex; }
+    .scan-top { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: #fff; background: rgba(0,0,0,.6); }
+    .scan-top b { flex: 1; font-size: 15px; }
+    .scan-top button { background: rgba(255,255,255,.16); color: #fff; border: 0; border-radius: 10px; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+    .scan-box { flex: 1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .scan-box #scanView { width: 100%; max-width: 640px; }
+    .scan-box video { width: 100% !important; height: auto !important; display: block; }
+    .scan-msg { color: #fff; text-align: center; font-size: 14px; padding: 14px 16px 22px; background: rgba(0,0,0,.6); line-height: 1.6; }
+    .scan-msg.err { color: #ffb4b4; }
+
+    @media (max-width: 760px) {
+      .app { display: block; height: auto; }
+      .side { position: fixed; left: 0; top: 0; z-index: 40; height: 100%; transform: translateX(-100%); transition: transform .2s;
+              box-shadow: 0 0 40px rgba(15,23,42,.2); }
+      body.drawer .side { transform: none; }
+      body.drawer .drawer-bg { display: block; position: fixed; inset: 0; background: rgba(15,23,42,.35); z-index: 39; }
+      .topbar { display: flex; align-items: center; gap: 8px; position: fixed; top: 0; left: 0; right: 0; height: var(--top-h); z-index: 30;
+                background: rgba(255,255,255,.97); border-bottom: 1px solid var(--line); padding: 0 10px; }
+      .topbar button { background: none; border: 0; padding: 8px; cursor: pointer; color: var(--text); display: flex; }
+      .topbar .tt { font-weight: 700; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .topbar .tt small { color: var(--muted); font-weight: 600; margin-right: 6px; font-size: 12.5px; }
+      main { position: fixed; top: var(--top-h); bottom: var(--tab-h); left: 0; right: 0; height: auto; }
+      .tabbar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: var(--tab-h); background: rgba(255,255,255,.97);
+                border-top: 1px solid var(--line); z-index: 20; overflow-x: auto; scrollbar-width: none; }
+      .tabbar::-webkit-scrollbar { display: none; }
+      .tabbar button { flex: 1; min-width: 54px; background: none; border: 0; font: inherit; font-size: 10.5px; font-weight: 600;
+                       padding: 8px 2px 6px; color: var(--muted); cursor: pointer; display: flex; flex-direction: column; align-items: center;
+                       gap: 3px; white-space: nowrap; letter-spacing: -0.4px; }
+      .tabbar button.on { color: var(--accent); }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button onclick="toggleDrawer()" aria-label="메뉴">
+      <svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <div class="tt" id="topTitle"></div>
+  </div>
+  <div class="drawer-bg" onclick="toggleDrawer()"></div>
+
+  <div class="app">
+    <aside class="side">
+      <div class="logo"><div class="mark">N</div><div><b>제조본부 업무 시스템</b><small>생산관리팀</small></div></div>
+      <div class="sec">업무</div>
+      <div id="menu"></div>
+      <div class="soon">
+        <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>다음 프로그램 자리
+      </div>
+      <div class="foot" id="foot"></div>
+    </aside>
+    <main id="main">
+      <div class="loader" id="loader">
+        <div class="spin"></div>
+        <div id="loaderText">불러오는 중...</div>
+        <div class="slow">오래 걸리면 <a id="loaderLink" href="#" target="_blank" rel="noopener">이 프로그램만 새 창으로 열기</a></div>
+      </div>
+    </main>
+  </div>
+  <nav class="tabbar" id="tabbar"></nav>
+
+  <div class="scan" id="scan">
+    <div class="scan-top"><b id="scanTitle">바코드 스캔</b><button onclick="scanClose(true)">닫기</button></div>
+    <div class="scan-box"><div id="scanView"></div></div>
+    <div class="scan-msg" id="scanMsg">바코드나 QR 을 화면 가운데에 비춰 주세요</div>
+  </div>
+
+  <script>
+    var SHELL_BUILD = 'v1.1 / 2026-11-20 GitHub';
+    var GAS = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002F';
+
+    var IC = {
+      cart: '<path d="M3 4h2l2.5 11h11l2-8H6.5"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>',
+      box: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/>',
+      chev: '<path d="m9 6 6 6-6 6"/>',
+      file: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 17h6"/>',
+      chart: '<path d="M3 20h18"/><path d="M6 16v-4M11 16V8M16 16v-6M20 16V5"/>',
+      card: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>',
+      home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-6h4v6"/>',
+      inb: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 17v3h16v-3"/>',
+      out: '<path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M4 17v3h16v-3"/>',
+      book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6"/>',
+      erp: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+      gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'
+    };
+
+    var APPS = [
+      { id: 'buy', name: '소모품 구매', icon: 'cart',
+        url: GAS + 'AKfycbyIvqJaPjMxr-SzAkNpwLnCCTSRgckmc43fsAazh9YHv3Mr4_bDFMuGo3sLTQ993qXQ2w\u002Fexec',
+        pages: [['docs', 'file', '기안 목록'], ['stats', 'chart', '구매 통계'], ['pay', 'card', '카드 결제 내역']] },
+      { id: 'raw', name: '소모성 원자재', icon: 'box',
+        url: GAS + 'AKfycbzO08C-phnDx54iYmpv55qkj4zba_d2FwTC_TUzSqaO1d_fIBWVD-GYCX_yVlE0tQ5A\u002Fexec',
+        pages: [['home', 'home', '대시보드'], ['items', 'box', '품목'], ['receive', 'inb', '불출'], ['issue', 'out', '지급'],
+                ['log', 'book', '지급대장'], ['plan', 'cart', '구매'], ['erp', 'erp', 'ERP'], ['anal', 'chart', '분석'], ['settings', 'gear', '설정']] }
+    ];
+
+    var cur = { app: 'buy', page: 'docs' };
+    var openGrp = { buy: true, raw: true };
+    var frames = {};
+    var lateTimer = null;
+
+    function icon(n, s) {
+      return '<svg class="i" viewBox="0 0 24 24"' + (s ? ' style="width:' + s + 'px;height:' + s + 'px"' : '') + '>' + (IC[n] || '') + '</svg>';
+    }
+    function appOf(id) {
+      for (var i = 0; i < APPS.length; i++) if (APPS[i].id === id) return APPS[i];
+      return null;
+    }
+    function pageOf(a, p) {
+      for (var i = 0; i < a.pages.length; i++) if (a.pages[i][0] === p) return a.pages[i];
+      return null;
+    }
+    function store(k, v) {
+      try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) {}
+      return null;
+    }
+
+    function menu() {
+      var h = '';
+      APPS.forEach(function (a) {
+        h += '<div class="grp' + (openGrp[a.id] ? ' open' : '') + '">'
+          + '<button class="grp-h" onclick="toggleGrp(\'' + a.id + '\')">' + icon(a.icon) + a.name
+          + '<span class="chev">' + icon('chev', 15) + '</span></button><div class="grp-b">';
+        a.pages.forEach(function (p) {
+          var on = cur.app === a.id && cur.page === p[0];
+          h += '<button class="' + (on ? 'on' : '') + '" onclick="go(\'' + a.id + '\', \'' + p[0] + '\')">' + p[2] + '</button>';
+        });
+        h += '</div></div>';
+      });
+      document.getElementById('menu').innerHTML = h;
+
+      var a = appOf(cur.app);
+      var p = pageOf(a, cur.page) || a.pages[0];
+      document.getElementById('tabbar').innerHTML = a.pages.map(function (x) {
+        return '<button class="' + (cur.page === x[0] ? 'on' : '') + '" onclick="go(\'' + a.id + '\', \'' + x[0] + '\')">'
+          + icon(x[1], 20) + x[2] + '</button>';
+      }).join('');
+      document.getElementById('topTitle').innerHTML = '<small>' + a.name + '</small>' + p[2];
+      document.title = p[2] + ' - 제조본부 업무 시스템';
+    }
+
+    function toggleGrp(id) { openGrp[id] = !openGrp[id]; menu(); }
+    function toggleDrawer() { document.body.classList.toggle('drawer'); }
+
+    function postDeep(w, msg, depth) {
+      if (!w || depth > 4) return;
+      try { w.postMessage(msg, '*'); } catch (e) {}
+      var n = 0;
+      try { n = w.frames.length; } catch (e) { n = 0; }
+      for (var i = 0; i < n; i++) {
+        var c = null;
+        try { c = w.frames[i]; } catch (e) { c = null; }
+        postDeep(c, msg, depth + 1);
+      }
+    }
+
+    function showLoader(a) {
+      var el = document.getElementById('loader');
+      document.getElementById('loaderText').textContent = a.name + ' 불러오는 중...';
+      document.getElementById('loaderLink').href = a.url;
+      el.className = 'loader on';
+      clearTimeout(lateTimer);
+      lateTimer = setTimeout(function () { el.className = 'loader on late'; }, 12000);
+    }
+    function hideLoader() {
+      clearTimeout(lateTimer);
+      document.getElementById('loader').className = 'loader';
+    }
+
+    function go(appId, page) {
+      var a = appOf(appId);
+      if (!a) return;
+      if (!pageOf(a, page)) page = a.pages[0][0];
+      cur = { app: appId, page: page };
+      openGrp[appId] = true;
+      document.body.classList.remove('drawer');
+      store('nbShellLast', appId + ':' + page);
+
+      var f = frames[appId];
+      if (!f) {
+        var el = document.createElement('iframe');
+        el.setAttribute('allow', 'camera; clipboard-read; clipboard-write; fullscreen');
+        el.src = a.url + '?embed=1&page=' + encodeURIComponent(page);
+        document.getElementById('main').appendChild(el);
+        f = frames[appId] = { el: el, ready: false, page: page };
+      }
+      for (var k in frames) frames[k].el.className = (k === appId ? 'on' : '');
+
+      if (!f.ready) showLoader(a);
+      else {
+        hideLoader();
+        if (f.page !== page) postDeep(f.el.contentWindow, { nbShell: 1, type: 'go', page: page }, 0);
+      }
+      menu();
+    }
+
+    var scanState = null;
+    var scanLib = null;
+
+    function loadScanLib() {
+      if (window.Html5Qrcode) return Promise.resolve();
+      if (scanLib) return scanLib;
+      scanLib = new Promise(function (ok, ng) {
+        var el = document.createElement('script');
+        el.src = 'https:\u002F\u002Funpkg.com\u002Fhtml5-qrcode@2.3.8\u002Fhtml5-qrcode.min.js';
+        el.onload = ok;
+        el.onerror = function () { scanLib = null; ng(new Error('스캐너를 불러오지 못했어요 (인터넷 연결 확인)')); };
+        document.head.appendChild(el);
+      });
+      return scanLib;
+    }
+
+    function scanReply(msg) {
+      if (!scanState) return;
+      var f = frames[scanState.app];
+      msg.nbShell = 1;
+      msg.type = 'scanResult';
+      msg.reqId = scanState.reqId;
+      if (f) postDeep(f.el.contentWindow, msg, 0);
+    }
+
+    function scanStart(app, reqId) {
+      if (scanState) scanClose(true);
+      scanState = { app: app, reqId: reqId, q: null, done: false };
+      var el = document.getElementById('scan');
+      document.getElementById('scanMsg').className = 'scan-msg';
+      document.getElementById('scanMsg').textContent = '카메라 켜는 중...';
+      el.className = 'scan on';
+      loadScanLib().then(function () {
+        if (!scanState) return;
+        var q = new Html5Qrcode('scanView', false);
+        scanState.q = q;
+        var box = function (w, h) { var m = Math.min(w, h); return { width: Math.round(Math.min(w * 0.9, m * 1.2)), height: Math.round(m * 0.6) }; };
+        return q.start({ facingMode: 'environment' },
+          { fps: 10, qrbox: box, experimentalFeatures: { useBarCodeDetectorIfSupported: true } },
+          function (text) {
+            if (!scanState || scanState.done) return;
+            scanState.done = true;
+            try { navigator.vibrate && navigator.vibrate(80); } catch (e) {}
+            scanReply({ text: String(text).trim() });
+            scanClose(false);
+          },
+          function () {}
+        ).then(function () {
+          document.getElementById('scanMsg').textContent = '바코드나 QR 을 화면 가운데에 비춰 주세요';
+        });
+      }).catch(function (e) {
+        var m = String((e && (e.message || e.name)) || e);
+        if (/NotAllowed|Permission/i.test(m)) m = '카메라 권한이 막혀 있어요. 브라우저 주소창 옆 설정에서 카메라를 허용해 주세요.';
+        document.getElementById('scanMsg').className = 'scan-msg err';
+        document.getElementById('scanMsg').textContent = m + ' (닫으면 사진 찍기 방식으로 바뀝니다)';
+        if (scanState) scanState.failed = true;
+      });
+    }
+
+    function scanClose(cancel) {
+      var st = scanState;
+      if (!st) return;
+      if (cancel) scanReply(st.failed ? { error: 'camera' } : { cancel: true });
+      scanState = null;
+      document.getElementById('scan').className = 'scan';
+      if (st.q) {
+        try { st.q.stop().then(function () { try { st.q.clear(); } catch (e) {} }).catch(function () {}); } catch (e) {}
+      }
+    }
+
+    window.addEventListener('message', function (ev) {
+      var d = ev.data;
+      if (!d || d.nbShell !== 1 || !d.app || !frames[d.app]) return;
+      var f = frames[d.app];
+      if (d.type === 'scan') {
+        scanStart(d.app, d.reqId);
+        return;
+      }
+      if (d.type === 'ready') {
+        postDeep(f.el.contentWindow, { nbShell: 1, type: 'hello', liveScan: true }, 0);
+        f.ready = true;
+        f.page = d.page;
+        if (cur.app === d.app) {
+          hideLoader();
+          if (d.page !== cur.page) postDeep(f.el.contentWindow, { nbShell: 1, type: 'go', page: cur.page }, 0);
+        }
+      } else if (d.type === 'page') {
+        f.ready = true;
+        f.page = d.page;
+        if (cur.app === d.app && cur.page !== d.page && pageOf(appOf(d.app), d.page)) {
+          cur.page = d.page;
+          store('nbShellLast', d.app + ':' + d.page);
+          menu();
+        }
+      }
+    });
+
+    function foot() {
+      var links = APPS.map(function (a) {
+        return '<a href="' + a.url + '" target="_blank" rel="noopener">' + a.name + '</a>';
+      }).join(' &middot; ');
+      document.getElementById('foot').innerHTML = '<b>새 창으로 열기</b>' + links
+        + '<div style="margin-top:6px;color:var(--muted);font-size:11px">build ' + SHELL_BUILD + '</div>';
+    }
+
+    (function start() {
+      foot();
+      var last = String(store('nbShellLast') || '').split(':');
+      if (last.length === 2 && appOf(last[0])) go(last[0], last[1]);
+      else go('buy', 'docs');
+    })();
+  </script>
+</body>
+</html>
