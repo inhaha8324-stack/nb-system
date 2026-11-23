@@ -110,6 +110,23 @@
     .dw-f button:disabled { opacity: .45; cursor: default; }
     .dw-f .stop { color: var(--ng); border-color: #f5c2c4; }
     .anote { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+    .anote a { color: var(--accent); font-weight: 600; text-decoration: none; margin-left: 4px; }
+    .afeed { border: 1px solid var(--line); border-radius: 12px; background: #fafbfd; max-height: 360px; overflow: auto; font-size: 12px; }
+    .afeed .fh { position: sticky; top: 0; background: #fff; border-bottom: 1px solid var(--line2); padding: 8px 12px; font-weight: 700; font-size: 12.5px;
+                 display: flex; align-items: center; gap: 6px; }
+    .afeed .fh span { color: var(--muted); font-weight: 500; }
+    .afeed .fr { display: flex; gap: 7px; align-items: baseline; padding: 5px 12px; border-bottom: 1px solid var(--line2); }
+    .afeed .fr:first-of-type { animation: fnew .6s; }
+    @keyframes fnew { from { background: var(--accent-soft); } to { background: transparent; } }
+    .afeed .ft { color: var(--muted); font-variant-numeric: tabular-nums; flex-shrink: 0; font-size: 11px; }
+    .afeed .fk { flex-shrink: 0; font-size: 10.5px; font-weight: 700; border-radius: 99px; padding: 1px 7px; background: #eef0f4; color: var(--sub); }
+    .afeed .fk.k1 { background: var(--accent-soft); color: var(--accent); }
+    .afeed .fk.k2 { background: #f1ebff; color: #8b5cf6; }
+    .afeed .fk.k3 { background: #fff4e0; color: #e08a00; }
+    .afeed .fk.k4 { background: #e7f7ee; color: var(--ok); }
+    .afeed .fk.k5 { background: #e2f6f6; color: #0ea5a4; }
+    .afeed .fx { min-width: 0; word-break: break-all; color: var(--text); }
+    .afeed .fe { color: var(--muted); text-align: center; padding: 28px 10px; }
     .abig { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 70; display: none; align-items: center; justify-content: center; padding: 3vh 3vw; }
     .abig.on { display: flex; }
     .abig .w { width: min(1280px, 100%); background: #0f172a; border-radius: 14px; overflow: hidden; }
@@ -218,7 +235,8 @@
     </div>
     <div class="dw-b">
       <ul class="steps" id="dwSteps"></ul>
-      <div class="ascreen" onclick="bigOpen()"><div class="cap"><i></i>실시간 작업 화면</div><img id="agImg" alt=""><div class="empty" id="agEmpty">화면을 불러오는 중...</div></div>
+      <div class="afeed" id="agFeed" hidden></div>
+      <div class="ascreen" id="agScreen" onclick="bigOpen()"><div class="cap"><i></i>실시간 작업 화면</div><img id="agImg" alt=""><div class="empty" id="agEmpty">화면을 불러오는 중...</div></div>
       <div class="anote" id="agNote">화면은 이 PC 안에서만 오갑니다 (구글·GitHub 로 올라가지 않음)</div>
       <div class="alog" id="dwLog"></div>
     </div>
@@ -239,7 +257,7 @@
   </div>
 
   <script>
-    var SHELL_BUILD = 'v1.6 / 2026-11-23 GitHub';
+    var SHELL_BUILD = 'v1.7 / 2026-11-23 GitHub';
     var GAS = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002F';
 
     var IC = {
@@ -437,7 +455,18 @@
       }
     }
 
-    var AG = { port: 0, token: '', ok: false, st: null, timer: null, open: false, key: '', lookups: {}, fail: 0, big: false, scr: false, last: null, closeT: null };
+    var AG = { port: 0, token: '', ok: false, st: null, timer: null, open: false, key: '', lookups: {}, fail: 0, big: false, scr: false, last: null, closeT: null, showScreen: false };
+    var DATA_JOBS = ['sync', 'items', 'lookup', 'open'];
+    var FEED_K = { '요청': 'k1', '품목': 'k2', '발주': 'k3', '입고': 'k4', '조회': 'k5', '시트': '' };
+    function isDataJob() {
+      var j = AG.st && AG.st.job;
+      return !!(j && DATA_JOBS.indexOf(j.kind) >= 0) && !AG.showScreen;
+    }
+    function toggleScreen() {
+      AG.showScreen = !AG.showScreen;
+      agRender();
+      if (!AG.scr) scrLoop();
+    }
 
     function agUrl(p, q) {
       return 'http:\u002F\u002F127.0.0.1:' + AG.port + p + '?k=' + encodeURIComponent(AG.token) + (q || '');
@@ -551,14 +580,29 @@
       document.getElementById('winBtn').textContent = AG.st && AG.st.hidden ? '오페라 창 띄우기' : '오페라 창 숨기기';
       document.getElementById('winBtn').disabled = !AG.ok;
       document.getElementById('stopBtn').disabled = !run;
-      document.getElementById('agNote').textContent = j && ['sync', 'items', 'lookup', 'open'].indexOf(j.kind) >= 0
-        ? '이 작업은 ERP 화면을 클릭하지 않고 데이터 통로로 바로 조회해서 화면은 그대로입니다 (그래서 빠름). 화면 입력 작업(구매요청, 전표)은 여기서 움직이는 게 보입니다.'
+      var dj = !!(j && DATA_JOBS.indexOf(j.kind) >= 0), showFeed = dj && !AG.showScreen;
+      document.getElementById('agFeed').hidden = !showFeed;
+      document.getElementById('agScreen').hidden = showFeed;
+      document.getElementById('agNote').innerHTML = dj
+        ? (showFeed ? '화면을 클릭하지 않고 ERP 데이터 통로로 바로 조회하는 작업이라, 화면 대신 가져온 내용을 보여 드려요.'
+                    : 'ERP 화면은 이 작업 동안 그대로입니다.')
+          + '<a href="#" onclick="toggleScreen();return false">' + (showFeed ? 'ERP 화면 보기' : '가져온 내용 보기') + '</a>'
         : '화면은 이 PC 안에서만 오갑니다 (구글·GitHub 로 올라가지 않음)';
+      if (showFeed) {
+        var fd = (AG.st && AG.st.feed) || [];
+        var html = '<div class="fh">가져온 내용 <span>' + (AG.st.feedN || 0) + '줄' + ((AG.st.feedN || 0) > fd.length ? ' (최근 ' + fd.length + '줄 표시)' : '') + '</span></div>';
+        html += fd.length ? fd.slice().reverse().map(function (r) {
+          return '<div class="fr"><span class="ft">' + esc2(r[0]) + '</span><span class="fk ' + (FEED_K[r[1]] || '') + '">' + esc2(r[1]) + '</span><span class="fx">' + esc2(r[2]) + '</span></div>';
+        }).join('') : '<div class="fe">' + (run ? '가져오는 중...' : '이번 작업에서 가져온 내용이 없습니다') + '</div>';
+        var box = document.getElementById('agFeed');
+        if (box.getAttribute('data-n') !== String(AG.st.feedN) || !box.innerHTML) { box.innerHTML = html; box.setAttribute('data-n', String(AG.st.feedN)); }
+      }
       document.getElementById('bigTitle').textContent = '실시간 작업 화면' + (run ? ' \u00B7 ' + j.steps[j.i] : '');
     }
     function scrLoop() {
       if (!(AG.open || AG.big) || !AG.ok) { AG.scr = false; return; }
       AG.scr = true;
+      if (isDataJob() && !AG.big) { setTimeout(scrLoop, 1000); return; }
       var im = new Image();
       im.onload = function () {
         document.getElementById('agImg').src = im.src;
