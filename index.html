@@ -127,6 +127,10 @@
     .afeed .fk.k5 { background: #e2f6f6; color: #0ea5a4; }
     .afeed .fx { min-width: 0; word-break: break-all; color: var(--text); }
     .afeed .fe { color: var(--muted); text-align: center; padding: 28px 10px; }
+    .aslip { border: 1px solid #f3d19c; background: #fff8ec; border-radius: 12px; padding: 12px 14px; font-size: 12.5px; color: #8a5a00; }
+    .aslip b { display: block; font-size: 13px; margin-bottom: 4px; color: #6b4400; }
+    .aslip .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+    .aslip button { margin-left: auto; }
     .abig { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 70; display: none; align-items: center; justify-content: center; padding: 3vh 3vw; }
     .abig.on { display: flex; }
     .abig .w { width: min(1280px, 100%); background: #0f172a; border-radius: 14px; overflow: hidden; }
@@ -235,6 +239,7 @@
     </div>
     <div class="dw-b">
       <ul class="steps" id="dwSteps"></ul>
+      <div class="aslip" id="agSlip" hidden></div>
       <div class="afeed" id="agFeed" hidden></div>
       <div class="ascreen" id="agScreen" onclick="bigOpen()"><div class="cap"><i></i>실시간 작업 화면</div><img id="agImg" alt=""><div class="empty" id="agEmpty">화면을 불러오는 중...</div></div>
       <div class="anote" id="agNote">화면은 이 PC 안에서만 오갑니다 (구글·GitHub 로 올라가지 않음)</div>
@@ -257,7 +262,7 @@
   </div>
 
   <script>
-    var SHELL_BUILD = 'v1.7 / 2026-11-23 GitHub';
+    var SHELL_BUILD = 'v1.8 / 2026-11-23 GitHub';
     var GAS = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002F';
 
     var IC = {
@@ -477,6 +482,18 @@
         return r.json();
       });
     }
+    function postBuy(msg) {
+      msg.nbShell = 1;
+      if (frames.buy && frames.buy.ready) postDeep(frames.buy.el.contentWindow, msg, 0);
+    }
+    function slipInfo() {
+      var j = AG.st && AG.st.job;
+      return { ok: AG.ok, slip: (AG.st && AG.st.slip) || null, job: j && j.kind === 'slip' ? j : null };
+    }
+    function slipDone() {
+      if (!confirm('ERP 전표 검토를 끝낼까요? ERP 화면이 원래 권한으로 돌아가고, 저장하지 않은 결의서는 사라집니다.')) return;
+      agFetch('/slip/done').then(agTick).catch(function () {});
+    }
     function postRaw(msg) {
       msg.nbShell = 1;
       if (frames.raw && frames.raw.ready) postDeep(frames.raw.el.contentWindow, msg, 0);
@@ -506,10 +523,12 @@
         AG.last = j ? { id: j.id, state: j.state } : null;
         if (!was) postRaw({ type: 'agentOk', ok: true });
         agRender(); agBroadcast(); agLookups();
+        var sk = JSON.stringify([s.slip, j && j.kind === 'slip' ? [j.id, j.state, j.i, j.msg] : 0]);
+        if (sk !== AG.slipKey || !was) { AG.slipKey = sk; var si = slipInfo(); si.type = 'slipStatus'; postBuy(si); }
       }).catch(function (e) {
         var was = AG.ok;
         AG.ok = false; AG.fail++;
-        if (was) postRaw({ type: 'agentOk', ok: false });
+        if (was) { postRaw({ type: 'agentOk', ok: false }); postBuy({ type: 'slipStatus', ok: false }); AG.slipKey = ''; }
         if (String(e && e.message) === 'token' || AG.fail === 2) postRaw({ type: 'agentStale' });
         agRender();
       }).then(function () {
@@ -577,6 +596,13 @@
       document.getElementById('dwLog').innerHTML = AG.st && AG.st.logs && AG.st.logs.length
         ? AG.st.logs.slice().reverse().map(function (l) { return '<div><span>' + esc2(l[0]) + '</span>' + esc2(l[1]) + '</div>'; }).join('')
         : '<div style="color:var(--muted)">기록 없음</div>';
+      var sl = AG.st && AG.st.slip, sb = document.getElementById('agSlip');
+      sb.hidden = !(AG.ok && sl && sl.hold);
+      if (!sb.hidden) {
+        var left = Math.max(0, Math.round((sl.until * 1000 - Date.now()) / 60000));
+        sb.innerHTML = '<b>카드 전표 검토 중 · ' + esc2(sl.doc) + '</b>오페라 창의 ERP 결의서를 확인하고 직접 저장·결재하세요. 검토가 끝날 때까지 다른 ERP 작업(갱신·조회)은 기다립니다.'
+          + '<div class="row"><span>' + left + '분 뒤 자동으로 끝남</span><button onclick="slipDone()">전표 검토 끝</button></div>';
+      }
       document.getElementById('winBtn').textContent = AG.st && AG.st.hidden ? '오페라 창 띄우기' : '오페라 창 숨기기';
       document.getElementById('winBtn').disabled = !AG.ok;
       document.getElementById('stopBtn').disabled = !run;
@@ -672,6 +698,26 @@
         });
         return;
       }
+      if (d.app === 'buy' && /\.googleusercontent\.com$/.test(String(ev.origin || ''))) {
+        if (d.type === 'slipState') { var si = slipInfo(); si.type = 'slipStatus'; postBuy(si); return; }
+        if (d.type === 'slipCards') {
+          if (!AG.ok) { postBuy({ type: 'slipCardsResult', reqId: d.reqId, error: 'PC 대기 프로그램에 연결되지 않았습니다 (원자재 화면을 한 번 열어 주세요)' }); return; }
+          agFetch('/slip/cards', '&s=' + encodeURIComponent(d.s || '') + '&e=' + encodeURIComponent(d.e || '') + (d.all ? '&all=1' : '')).then(function (r) {
+            postBuy({ type: 'slipCardsResult', reqId: d.reqId, rows: r.rows || [], error: r.ok ? '' : (r.error || '조회 실패') });
+          }).catch(function (e) { postBuy({ type: 'slipCardsResult', reqId: d.reqId, error: 'PC 대기 프로그램에 연결하지 못했습니다' }); });
+          return;
+        }
+        if (d.type === 'slipRun') {
+          if (!AG.ok) { postBuy({ type: 'slipRunResult', reqId: d.reqId, error: 'PC 대기 프로그램에 연결되지 않았습니다' }); return; }
+          fetch(agUrl('/slip/run'), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: d.plan }) })
+            .then(function (r) { return r.json(); })
+            .then(function (r) { postBuy({ type: 'slipRunResult', reqId: d.reqId, ok: !!r.ok, error: r.ok ? '' : (r.error || '요청 실패') }); if (r.ok) { drawerOpen(); agTick(); } })
+            .catch(function () { postBuy({ type: 'slipRunResult', reqId: d.reqId, error: 'PC 대기 프로그램에 연결하지 못했습니다' }); });
+          return;
+        }
+        if (d.type === 'slipDone') { agFetch('/slip/done').then(agTick).catch(function () {}); return; }
+        if (d.type === 'erpOpen') { drawerOpen(); return; }
+      }
       if (d.type === 'scan') {
         scanStart(d.app, d.reqId);
         return;
@@ -679,6 +725,7 @@
       if (d.type === 'ready') {
         postDeep(f.el.contentWindow, { nbShell: 1, type: 'hello', liveScan: true }, 0);
         if (d.app === 'raw' && AG.ok) setTimeout(function () { postRaw({ type: 'agentOk', ok: true }); AG.key = ''; agBroadcast(); }, 300);
+        if (d.app === 'buy') setTimeout(function () { var si = slipInfo(); si.type = 'slipStatus'; postBuy(si); }, 300);
         f.ready = true;
         f.page = d.page;
         if (cur.app === d.app) {
