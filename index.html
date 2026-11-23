@@ -262,7 +262,7 @@
   </div>
 
   <script>
-    var SHELL_BUILD = 'v1.8 / 2026-11-23 GitHub';
+    var SHELL_BUILD = 'v1.9 / 2026-11-23 GitHub';
     var GAS = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002F';
 
     var IC = {
@@ -488,7 +488,7 @@
     }
     function slipInfo() {
       var j = AG.st && AG.st.job;
-      return { ok: AG.ok, slip: (AG.st && AG.st.slip) || null, job: j && j.kind === 'slip' ? j : null };
+      return { ok: AG.ok, slip: (AG.st && AG.st.slip) || null, job: j && (j.kind === 'slip' || j.kind === 'slipgw') ? j : null };
     }
     function slipDone() {
       if (!confirm('ERP 전표 검토를 끝낼까요? ERP 화면이 원래 권한으로 돌아가고, 저장하지 않은 결의서는 사라집니다.')) return;
@@ -523,7 +523,7 @@
         AG.last = j ? { id: j.id, state: j.state } : null;
         if (!was) postRaw({ type: 'agentOk', ok: true });
         agRender(); agBroadcast(); agLookups();
-        var sk = JSON.stringify([s.slip, j && j.kind === 'slip' ? [j.id, j.state, j.i, j.msg] : 0]);
+        var sk = JSON.stringify([s.slip, j && (j.kind === 'slip' || j.kind === 'slipgw') ? [j.id, j.state, j.i, j.msg] : 0]);
         if (sk !== AG.slipKey || !was) { AG.slipKey = sk; var si = slipInfo(); si.type = 'slipStatus'; postBuy(si); }
       }).catch(function (e) {
         var was = AG.ok;
@@ -600,7 +600,9 @@
       sb.hidden = !(AG.ok && sl && sl.hold);
       if (!sb.hidden) {
         var left = Math.max(0, Math.round((sl.until * 1000 - Date.now()) / 60000));
-        sb.innerHTML = '<b>카드 전표 검토 중 · ' + esc2(sl.doc) + '</b>오페라 창의 ERP 결의서를 확인하고 직접 저장·결재하세요. 검토가 끝날 때까지 다른 ERP 작업(갱신·조회)은 기다립니다.'
+        sb.innerHTML = (sl.stage === 'gw'
+          ? '<b>결재 창 열림 · ' + esc2(sl.doc) + ' ' + esc2(sl.abdocu || '') + '</b>오페라의 결재 창에 제목·본문 표·참조문서를 넣고(웹앱 전표 만들기의 복사 버튼) 직접 상신하세요. 다음 부서 전표는 웹앱에서 바로 [ERP에 입력] 하면 됩니다.'
+          : '<b>카드 전표 검토 중 · ' + esc2(sl.doc) + '</b>오페라 창의 ERP 결의서를 확인하고 [저장] 하세요. 저장하면 결재 창을 자동으로 열어 둡니다. 검토가 끝날 때까지 다른 ERP 작업(갱신·조회)은 기다립니다.')
           + '<div class="row"><span>' + left + '분 뒤 자동으로 끝남</span><button onclick="slipDone()">전표 검토 끝</button></div>';
       }
       document.getElementById('winBtn').textContent = AG.st && AG.st.hidden ? '오페라 창 띄우기' : '오페라 창 숨기기';
