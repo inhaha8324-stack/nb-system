@@ -14,7 +14,7 @@
     :root {
       --bg:#f4f6fa; --card:#ffffff; --line:#e8ebf1; --line2:#f0f2f6; --text:#111827; --sub:#4b5563; --muted:#8b93a1;
       --accent:#3b5bfd; --accent-2:#6f8bff; --accent-soft:#eef1ff; --ink:#0f172a;
-      --ok:#12a150; --ng:#e5484d; --ng-soft:#fdeced;
+      --ok:#12a150; --ng:#e5484d; --ng-soft:#fdeced; --warn:#e08a00; --warn-soft:#fff4e0;
       --side-w:240px; --top-h:52px; --tab-h:58px;
     }
     * { box-sizing: border-box; }
@@ -188,6 +188,29 @@
                        gap: 3px; white-space: nowrap; letter-spacing: -0.4px; }
       .tabbar button.on { color: var(--accent); }
     }
+
+    body.phone .app { display: block; height: auto; }
+    body.phone .side { position: fixed; left: 0; top: 0; z-index: 40; height: 100%; transform: translateX(-100%); transition: transform .2s;
+                       box-shadow: 0 0 40px rgba(15,23,42,.2); }
+    body.phone.drawer .side { transform: none; }
+    body.phone.drawer .drawer-bg { display: block; position: fixed; inset: 0; background: rgba(15,23,42,.35); z-index: 39; }
+    body.phone .topbar { display: flex; align-items: center; gap: 8px; position: fixed; top: 0; left: 0; right: 0; height: var(--top-h); z-index: 30;
+                         background: rgba(255,255,255,.97); border-bottom: 1px solid var(--line); padding: 0 10px; }
+    body.phone .topbar button { background: none; border: 0; padding: 8px; cursor: pointer; color: var(--text); display: flex; }
+    body.phone .topbar .tt { flex: 1; min-width: 0; font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    body.phone .topbar .tt small { color: var(--muted); font-weight: 600; margin-right: 6px; font-size: 12.5px; }
+    body.phone main { position: fixed; top: var(--top-h); bottom: calc(var(--tab-h) + env(safe-area-inset-bottom)); left: 0; right: 0; height: auto; }
+    body.phone .tabbar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--tab-h) + env(safe-area-inset-bottom));
+                         padding-bottom: env(safe-area-inset-bottom); background: rgba(255,255,255,.97); border-top: 1px solid var(--line); z-index: 20; }
+    body.phone .tabbar button { flex: 1; min-width: 0; background: none; border: 0; font: inherit; font-size: 11.5px; font-weight: 600;
+                                padding: 8px 2px 6px; color: var(--muted); cursor: pointer; display: flex; flex-direction: column; align-items: center;
+                                justify-content: center; gap: 3px; white-space: nowrap; }
+    body.phone .tabbar button.on { color: var(--accent); }
+    body.phone .tabbar button.in { color: var(--text); }
+    body.phone .tabbar button.in.on { color: var(--accent); }
+    body.phone .erpbox, body.phone .dhandle { display: none !important; }
+    .ro-chip { flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--warn); background: var(--warn-soft); padding: 3px 9px; border-radius: 99px; }
+    .pmode { display: block; margin-top: 8px; color: var(--accent); font-weight: 600; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -196,6 +219,7 @@
       <svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
     <div class="tt" id="topTitle"></div>
+    <span class="ro-chip" id="roChip" hidden>보기 전용</span>
   </div>
   <div class="drawer-bg" onclick="toggleDrawer()"></div>
 
@@ -262,7 +286,7 @@
   </div>
 
   <script>
-    var SHELL_BUILD = 'v1.9 / 2026-11-23 GitHub';
+    var SHELL_BUILD = 'v2.0 / 2026-11-24 GitHub';
     var GAS = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002F';
 
     var IC = {
@@ -277,7 +301,8 @@
       out: '<path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M4 17v3h16v-3"/>',
       book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6"/>',
       erp: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
-      gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'
+      gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+      more: '<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>'
     };
 
     var APPS = [
@@ -289,6 +314,18 @@
         pages: [['home', 'home', '대시보드'], ['items', 'box', '품목'], ['receive', 'inb', '불출'], ['issue', 'out', '지급'],
                 ['log', 'book', '지급대장'], ['plan', 'cart', '구매'], ['erp', 'erp', 'ERP'], ['anal', 'chart', '분석'], ['settings', 'gear', '설정']] }
     ];
+
+    var PHONE_TABS = [['raw', 'receive', 'inb', '불출'], ['raw', 'issue', 'out', '지급'], ['raw', 'items', 'box', '재고'], ['raw', 'log', 'book', '지급대장']];
+    var PHONE = (function () {
+      var q = /[?&]phone=([01])/.exec(location.search);
+      if (q) store('nbPhone', q[1]);
+      var s = store('nbPhone');
+      if (s === '1' || s === '0') return s === '1';
+      var coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+      return !!coarse && Math.min(screen.width, screen.height) < 1000;
+    })();
+    function isInput(app, page) { return app === 'raw' && (page === 'receive' || page === 'issue'); }
+    function phoneSwitch(on) { store('nbPhone', on ? '1' : '0'); location.href = location.pathname; }
 
     var cur = { app: 'buy', page: 'docs' };
     var openGrp = { buy: true, raw: true };
@@ -327,11 +364,25 @@
 
       var a = appOf(cur.app);
       var p = pageOf(a, cur.page) || a.pages[0];
-      document.getElementById('tabbar').innerHTML = a.pages.map(function (x) {
-        return '<button class="' + (cur.page === x[0] ? 'on' : '') + '" onclick="go(\'' + a.id + '\', \'' + x[0] + '\')">'
-          + icon(x[1], 20) + x[2] + '</button>';
-      }).join('');
+      if (PHONE) {
+        var inTab = false;
+        var tabs = PHONE_TABS.map(function (x) {
+          var on = cur.app === x[0] && cur.page === x[1];
+          if (on) inTab = true;
+          return '<button class="' + (on ? 'on ' : '') + (isInput(x[0], x[1]) ? 'in' : '') + '" onclick="go(\'' + x[0] + '\', \'' + x[1] + '\')">'
+            + icon(x[2], 22) + x[3] + '</button>';
+        }).join('');
+        document.getElementById('tabbar').innerHTML = tabs
+          + '<button class="' + (inTab ? '' : 'on') + '" onclick="toggleDrawer()">' + icon('more', 22) + '더보기</button>';
+      } else {
+        document.getElementById('tabbar').innerHTML = a.pages.map(function (x) {
+          return '<button class="' + (cur.page === x[0] ? 'on' : '') + '" onclick="go(\'' + a.id + '\', \'' + x[0] + '\')">'
+            + icon(x[1], 20) + x[2] + '</button>';
+        }).join('');
+      }
       document.getElementById('topTitle').innerHTML = '<small>' + a.name + '</small>' + p[2];
+      var rc = document.getElementById('roChip');
+      if (rc) rc.hidden = !(PHONE && !isInput(cur.app, cur.page));
       document.title = p[2] + ' - 제조본부 통합관리 시스템';
     }
 
@@ -370,13 +421,13 @@
       cur = { app: appId, page: page };
       openGrp[appId] = true;
       document.body.classList.remove('drawer');
-      store('nbShellLast', appId + ':' + page);
+      store(PHONE ? 'nbPhoneLast' : 'nbShellLast', appId + ':' + page);
 
       var f = frames[appId];
       if (!f) {
         var el = document.createElement('iframe');
         el.setAttribute('allow', 'camera; clipboard-read; clipboard-write; fullscreen');
-        el.src = a.url + '?embed=1&page=' + encodeURIComponent(page);
+        el.src = a.url + '?embed=1&page=' + encodeURIComponent(page) + (PHONE ? '&m=1' : '');
         document.getElementById('main').appendChild(el);
         f = frames[appId] = { el: el, ready: false, page: page };
       }
@@ -682,7 +733,7 @@
       var d = ev.data;
       if (!d || d.nbShell !== 1 || !d.app || !frames[d.app]) return;
       var f = frames[d.app];
-      if (d.app === 'raw' && d.type === 'agentLink') { agSet(d); return; }
+      if (d.app === 'raw' && d.type === 'agentLink') { if (!PHONE) agSet(d); return; }
       if (d.app === 'raw' && d.type === 'erpPoke') {
         if (AG.ok) agFetch('/poke').then(agTick).catch(function () {});
         if (d.open && AG.ok) drawerOpen();
@@ -739,7 +790,7 @@
         f.page = d.page;
         if (cur.app === d.app && cur.page !== d.page && pageOf(appOf(d.app), d.page)) {
           cur.page = d.page;
-          store('nbShellLast', d.app + ':' + d.page);
+          store(PHONE ? 'nbPhoneLast' : 'nbShellLast', d.app + ':' + d.page);
           menu();
         }
       }
@@ -750,6 +801,8 @@
         return '<a href="' + a.url + '" target="_blank" rel="noopener">' + a.name + '</a>';
       }).join(' &middot; ');
       document.getElementById('foot').innerHTML = '<b>새 창으로 열기</b>' + links
+        + (PHONE ? '<a class="pmode" onclick="phoneSwitch(false)">PC 화면으로 보기</a>'
+          : (store('nbPhone') === '0' ? '<a class="pmode" onclick="phoneSwitch(true)">폰 화면으로 보기</a>' : ''))
         + '<div style="margin-top:6px;color:var(--muted);font-size:11px">build ' + SHELL_BUILD + '</div>';
     }
 
@@ -758,9 +811,11 @@
     }
 
     (function start() {
+      if (PHONE) document.body.classList.add('phone');
       foot();
-      var last = String(store('nbShellLast') || '').split(':');
+      var last = String(store(PHONE ? 'nbPhoneLast' : 'nbShellLast') || '').split(':');
       if (last.length === 2 && appOf(last[0])) go(last[0], last[1]);
+      else if (PHONE) go('raw', 'receive');
       else go('buy', 'docs');
     })();
   </script>
