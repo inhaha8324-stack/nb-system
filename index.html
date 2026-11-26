@@ -38,6 +38,9 @@
     .grp-h { display: flex; gap: 10px; align-items: center; width: 100%; background: none; border: 0; color: var(--text);
              font: inherit; font-weight: 700; padding: 10px 12px; border-radius: 10px; cursor: pointer; text-align: left; }
     .grp-h:hover { background: #f5f6f9; }
+    .nbd { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: #e5484d; color: #fff;
+           font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+    .tabbar button .nbd { position: absolute; top: 4px; left: calc(50% + 6px); }
     .grp-h .chev { margin-left: auto; color: var(--muted); transition: transform .15s; display: flex; }
     .grp.open .grp-h .chev { transform: rotate(90deg); }
     .grp-b { display: none; padding: 2px 0 6px 30px; position: relative; }
@@ -294,7 +297,7 @@
   </div>
 
   <script>
-    var SHELL_BUILD = 'v2.2 / 2026-11-24 GitHub';
+    var SHELL_BUILD = 'v2.3 / 2026-11-26 GitHub';
     var GAS = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002F';
 
     var IC = {
@@ -337,6 +340,7 @@
 
     var cur = { app: 'buy', page: 'docs' };
     var openGrp = { buy: true, raw: true };
+    var BADGE = {};
     var frames = {};
     var lateTimer = null;
 
@@ -361,6 +365,7 @@
       APPS.forEach(function (a) {
         h += '<div class="grp' + (openGrp[a.id] ? ' open' : '') + '">'
           + '<button class="grp-h" onclick="toggleGrp(\'' + a.id + '\')">' + icon(a.icon) + a.name
+          + (BADGE[a.id] ? '<span class="nbd" title="발주 상태 알림">' + BADGE[a.id] + '</span>' : '')
           + '<span class="chev">' + icon('chev', 15) + '</span></button><div class="grp-b">';
         a.pages.forEach(function (p) {
           var on = cur.app === a.id && cur.page === p[0];
@@ -381,7 +386,8 @@
             + icon(x[2], 22) + x[3] + '</button>';
         }).join('');
         document.getElementById('tabbar').innerHTML = tabs
-          + '<button class="' + (inTab ? '' : 'on') + '" onclick="toggleDrawer()">' + icon('more', 22) + '더보기</button>';
+          + '<button class="' + (inTab ? '' : 'on') + '" style="position:relative" onclick="toggleDrawer()">' + icon('more', 22) + '더보기'
+          + (BADGE.raw ? '<span class="nbd">' + BADGE.raw + '</span>' : '') + '</button>';
       } else {
         document.getElementById('tabbar').innerHTML = a.pages.map(function (x) {
           return '<button class="' + (cur.page === x[0] ? 'on' : '') + '" onclick="go(\'' + a.id + '\', \'' + x[0] + '\')">'
@@ -741,6 +747,7 @@
       var d = ev.data;
       if (!d || d.nbShell !== 1 || !d.app || !frames[d.app]) return;
       var f = frames[d.app];
+      if (d.type === 'badge') { var bn = Math.max(0, parseInt(d.n, 10) || 0); if (BADGE[d.app] !== bn) { BADGE[d.app] = bn; menu(); } return; }
       if (d.app === 'raw' && d.type === 'agentLink') { if (!PHONE) agSet(d); return; }
       if (d.app === 'raw' && d.type === 'erpPoke') {
         if (AG.ok) agFetch('/poke').then(agTick).catch(function () {});
