@@ -297,11 +297,11 @@
   </div>
 
   <script>
-    var SHELL_BUILD = 'v2.5 / 2026-11-27 GitHub';
+    var SHELL_BUILD = 'v2.6 / 2026-11-27 GitHub';
     /* 보기 전용 링크 (v2.4): 주소 끝 #v=열쇠 → 두 프로그램을 '보기 전용판'(별도 Apps Script, 읽기 권한만)으로 띄움.
        열쇠는 # 뒤라 GitHub 서버로 안 감. 열쇠가 틀리면 보기 전용판이 '링크가 올바르지 않음'을 보여 줌 */
     var VIEW_EXEC = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002FAKfycbw-PKjhFuq49402Pw3QZifXCHh9wVsUB3KgpBYUOXo3wDVK2MGf-oHnAixVrbza1PhTpg\u002Fexec';
-    var VIEWK = (function () { var m = new RegExp('[#&]v=([A-Za-z0-9_-]{20,})').exec(location.hash); return m ? m[1] : ''; })();
+    var VIEWK = (function () { var m = new RegExp('[#?&]v=([A-Za-z0-9_-]{20,})').exec(location.search + location.hash); return m ? m[1] : ''; })();   /* #v= 또는 ?v= (메일이 # 뒤를 자르는 경우) */
     var GAS = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002F';
 
     var IC = {
@@ -345,7 +345,7 @@
       return !!coarse && Math.min(screen.width, screen.height) < 1000;
     })();
     function isInput(app, page) { return app === 'raw' && (page === 'receive' || page === 'issue'); }
-    function phoneSwitch(on) { store('nbPhone', on ? '1' : '0'); location.href = location.pathname + (VIEWK ? location.hash : ''); }
+    function phoneSwitch(on) { store('nbPhone', on ? '1' : '0'); location.href = location.pathname + (VIEWK ? '#v=' + VIEWK : ''); }
 
     var cur = { app: 'buy', page: 'docs' };
     var openGrp = { buy: true, raw: true };
