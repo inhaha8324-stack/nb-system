@@ -297,7 +297,7 @@
   </div>
 
   <script>
-    var SHELL_BUILD = 'v2.4 / 2026-11-27 GitHub';
+    var SHELL_BUILD = 'v2.5 / 2026-11-27 GitHub';
     /* 보기 전용 링크 (v2.4): 주소 끝 #v=열쇠 → 두 프로그램을 '보기 전용판'(별도 Apps Script, 읽기 권한만)으로 띄움.
        열쇠는 # 뒤라 GitHub 서버로 안 감. 열쇠가 틀리면 보기 전용판이 '링크가 올바르지 않음'을 보여 줌 */
     var VIEW_EXEC = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002FAKfycbw-PKjhFuq49402Pw3QZifXCHh9wVsUB3KgpBYUOXo3wDVK2MGf-oHnAixVrbza1PhTpg\u002Fexec';
@@ -333,6 +333,7 @@
     var PHONE_TABS = [['raw', 'receive', 'inb', '불출'], ['raw', 'issue', 'out', '지급'], ['raw', 'items', 'box', '재고'], ['raw', 'log', 'book', '지급대장']];
     if (VIEWK) {
       APPS.forEach(function (a) { a.url = VIEW_EXEC + '?app=' + a.id + '&k=' + VIEWK; });
+      APPS.forEach(function (a) { a.pages = a.pages.filter(function (p) { return p[0] !== 'settings'; }); });   /* 보기 전용: 설정 화면 뺌 */
       PHONE_TABS = [['raw', 'home', 'home', '대시보드'], ['raw', 'items', 'box', '재고'], ['raw', 'log', 'book', '지급대장'], ['buy', 'stats', 'chart', '구매 통계']];
     }
     var PHONE = (function () {
@@ -745,6 +746,7 @@
       agFetch('/stop').then(agTick).catch(function () {});
     }
     (function agRestore() {
+      if (VIEWK) return;   /* 보기 전용: PC 대기 프로그램(ERP) 연결 안 함 */
       try {
         var l = JSON.parse(store('nbAgent') || 'null');
         if (l && l.token) { AG.port = l.port; AG.token = l.token; setTimeout(agTick, 300); }
@@ -756,7 +758,7 @@
       if (!d || d.nbShell !== 1 || !d.app || !frames[d.app]) return;
       var f = frames[d.app];
       if (d.type === 'badge') { var bn = Math.max(0, parseInt(d.n, 10) || 0); if (BADGE[d.app] !== bn) { BADGE[d.app] = bn; menu(); } return; }
-      if (d.app === 'raw' && d.type === 'agentLink') { if (!PHONE) agSet(d); return; }
+      if (d.app === 'raw' && d.type === 'agentLink') { if (!PHONE && !VIEWK) agSet(d); return; }
       if (d.app === 'raw' && d.type === 'erpPoke') {
         if (AG.ok) agFetch('/poke').then(agTick).catch(function () {});
         if (d.open && AG.ok) drawerOpen();
