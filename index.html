@@ -297,7 +297,11 @@
   </div>
 
   <script>
-    var SHELL_BUILD = 'v2.3 / 2026-11-26 GitHub';
+    var SHELL_BUILD = 'v2.4 / 2026-11-27 GitHub';
+    /* 보기 전용 링크 (v2.4): 주소 끝 #v=열쇠 → 두 프로그램을 '보기 전용판'(별도 Apps Script, 읽기 권한만)으로 띄움.
+       열쇠는 # 뒤라 GitHub 서버로 안 감. 열쇠가 틀리면 보기 전용판이 '링크가 올바르지 않음'을 보여 줌 */
+    var VIEW_EXEC = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002FAKfycbw-PKjhFuq49402Pw3QZifXCHh9wVsUB3KgpBYUOXo3wDVK2MGf-oHnAixVrbza1PhTpg\u002Fexec';
+    var VIEWK = (function () { var m = new RegExp('[#&]v=([A-Za-z0-9_-]{20,})').exec(location.hash); return m ? m[1] : ''; })();
     var GAS = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002F';
 
     var IC = {
@@ -327,6 +331,10 @@
     ];
 
     var PHONE_TABS = [['raw', 'receive', 'inb', '불출'], ['raw', 'issue', 'out', '지급'], ['raw', 'items', 'box', '재고'], ['raw', 'log', 'book', '지급대장']];
+    if (VIEWK) {
+      APPS.forEach(function (a) { a.url = VIEW_EXEC + '?app=' + a.id + '&k=' + VIEWK; });
+      PHONE_TABS = [['raw', 'home', 'home', '대시보드'], ['raw', 'items', 'box', '재고'], ['raw', 'log', 'book', '지급대장'], ['buy', 'stats', 'chart', '구매 통계']];
+    }
     var PHONE = (function () {
       var q = /[?&]phone=([01])/.exec(location.search);
       if (q) store('nbPhone', q[1]);
@@ -336,7 +344,7 @@
       return !!coarse && Math.min(screen.width, screen.height) < 1000;
     })();
     function isInput(app, page) { return app === 'raw' && (page === 'receive' || page === 'issue'); }
-    function phoneSwitch(on) { store('nbPhone', on ? '1' : '0'); location.href = location.pathname; }
+    function phoneSwitch(on) { store('nbPhone', on ? '1' : '0'); location.href = location.pathname + (VIEWK ? location.hash : ''); }
 
     var cur = { app: 'buy', page: 'docs' };
     var openGrp = { buy: true, raw: true };
@@ -396,8 +404,8 @@
       }
       document.getElementById('topTitle').innerHTML = '<small>' + a.name + '</small>' + p[2];
       var rc = document.getElementById('roChip');
-      if (rc) rc.hidden = !(PHONE && !isInput(cur.app, cur.page));
-      document.title = p[2] + ' - 제조본부 통합관리 시스템';
+      if (rc) rc.hidden = !(VIEWK || (PHONE && !isInput(cur.app, cur.page)));
+      document.title = p[2] + ' - 제조본부 통합관리 시스템' + (VIEWK ? ' (보기 전용)' : '');
     }
 
     function toggleGrp(id) { openGrp[id] = !openGrp[id]; menu(); }
@@ -435,13 +443,13 @@
       cur = { app: appId, page: page };
       openGrp[appId] = true;
       document.body.classList.remove('navopen');
-      store(PHONE ? 'nbPhoneLast' : 'nbShellLast', appId + ':' + page);
+      store(VIEWK ? 'nbViewLast' : PHONE ? 'nbPhoneLast' : 'nbShellLast', appId + ':' + page);
 
       var f = frames[appId];
       if (!f) {
         var el = document.createElement('iframe');
         el.setAttribute('allow', 'camera; clipboard-read; clipboard-write; fullscreen');
-        el.src = a.url + '?embed=1&page=' + encodeURIComponent(page) + (PHONE ? '&m=1' : '');
+        el.src = a.url + (a.url.indexOf('?') >= 0 ? '&' : '?') + 'embed=1&page=' + encodeURIComponent(page) + (PHONE ? '&m=1' : '');
         document.getElementById('main').appendChild(el);
         f = frames[appId] = { el: el, ready: false, page: page };
       }
@@ -805,7 +813,7 @@
         f.page = d.page;
         if (cur.app === d.app && cur.page !== d.page && pageOf(appOf(d.app), d.page)) {
           cur.page = d.page;
-          store(PHONE ? 'nbPhoneLast' : 'nbShellLast', d.app + ':' + d.page);
+          store(VIEWK ? 'nbViewLast' : PHONE ? 'nbPhoneLast' : 'nbShellLast', d.app + ':' + d.page);
           menu();
         }
       }
@@ -815,7 +823,8 @@
       var links = APPS.map(function (a) {
         return '<a href="' + a.url + '" target="_blank" rel="noopener">' + a.name + '</a>';
       }).join(' &middot; ');
-      document.getElementById('foot').innerHTML = '<b>새 창으로 열기</b>' + links
+      if (VIEWK) { var sm = document.querySelector('.logo small'); if (sm) sm.textContent = '보기 전용 (조회·검색만)'; }
+      document.getElementById('foot').innerHTML = (VIEWK ? '' : '<b>새 창으로 열기</b>' + links)
         + (PHONE ? '<a class="pmode" onclick="phoneSwitch(false)">PC 화면으로 보기</a>'
           : (store('nbPhone') === '0' ? '<a class="pmode" onclick="phoneSwitch(true)">폰 화면으로 보기</a>' : ''))
         + '<div style="margin-top:6px;color:var(--muted);font-size:11px">build ' + SHELL_BUILD + '</div>';
@@ -828,7 +837,7 @@
     (function start() {
       if (PHONE) document.body.classList.add('phone');
       foot();
-      var last = String(store(PHONE ? 'nbPhoneLast' : 'nbShellLast') || '').split(':');
+      var last = String(store(VIEWK ? 'nbViewLast' : PHONE ? 'nbPhoneLast' : 'nbShellLast') || '').split(':');
       if (last.length === 2 && appOf(last[0])) go(last[0], last[1]);
       else if (PHONE) go('raw', 'receive');
       else go('buy', 'docs');
