@@ -7,6 +7,18 @@
   <meta name="robots" content="noindex, nofollow">
   <title>제조본부 통합관리 시스템</title>
   <link rel="manifest" href="manifest.webmanifest">
+  <script>
+    /* 보기 전용 링크로 열면 '보기 전용' 설치형 앱으로 설치되게 (v2.7): 설치한 앱은 주소 끝 #v= 없이 시작해서
+       예전엔 일반(내 전용) 화면으로 열렸음 → 보기 전용 manifest(start_url ./?view=1) + 열쇠는 이 기기에 저장 */
+    (function () {
+      var m = new RegExp('[#?&]v=([A-Za-z0-9_-]{20,})').exec(location.search + location.hash);
+      if (m) { try { localStorage.setItem('nbViewKey', m[1]); } catch (e) {} }
+      if (m || new RegExp('[?&]view=1').test(location.search)) {
+        var l = document.querySelector('link[rel=manifest]');
+        if (l) l.setAttribute('href', 'view.webmanifest');
+      }
+    })();
+  </script>
   <meta name="theme-color" content="#ffffff">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="icon" href="favicon.ico">
@@ -297,11 +309,21 @@
   </div>
 
   <script>
-    var SHELL_BUILD = 'v2.6 / 2026-11-27 GitHub';
+    var SHELL_BUILD = 'v2.7 / 2026-11-27 GitHub';
     /* 보기 전용 링크 (v2.4): 주소 끝 #v=열쇠 → 두 프로그램을 '보기 전용판'(별도 Apps Script, 읽기 권한만)으로 띄움.
        열쇠는 # 뒤라 GitHub 서버로 안 감. 열쇠가 틀리면 보기 전용판이 '링크가 올바르지 않음'을 보여 줌 */
     var VIEW_EXEC = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002FAKfycbw-PKjhFuq49402Pw3QZifXCHh9wVsUB3KgpBYUOXo3wDVK2MGf-oHnAixVrbza1PhTpg\u002Fexec';
-    var VIEWK = (function () { var m = new RegExp('[#?&]v=([A-Za-z0-9_-]{20,})').exec(location.search + location.hash); return m ? m[1] : ''; })();   /* #v= 또는 ?v= (메일이 # 뒤를 자르는 경우) */
+    var VIEWK = (function () {
+      var m = new RegExp('[#?&]v=([A-Za-z0-9_-]{20,})').exec(location.search + location.hash);
+      if (m) return m[1];
+      if (new RegExp('[?&]view=1').test(location.search)) { try { return localStorage.getItem('nbViewKey') || ''; } catch (e) { return ''; } }
+      return '';
+    })();   /* #v= · ?v= · 보기 전용 앱(?view=1, 저장된 열쇠) */
+    if (!VIEWK && new RegExp('[?&]view=1').test(location.search)) {
+      document.body.innerHTML = '<div style="font:15px sans-serif;padding:40px 24px;line-height:1.7;color:#333">'
+        + '<b>보기 전용 열쇠가 이 기기에 없습니다.</b><br>공지로 받은 보기 전용 링크를 한 번 다시 열어 주세요.</div>';
+      throw new Error('보기 전용 열쇠 없음');
+    }   /* #v= 또는 ?v= (메일이 # 뒤를 자르는 경우) */
     var GAS = 'https:\u002F\u002Fscript.google.com\u002Fmacros\u002Fs\u002F';
 
     var IC = {

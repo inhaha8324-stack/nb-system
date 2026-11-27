@@ -1,0 +1,26 @@
+{
+  "name": "제조본부 통합관리 시스템 (보기 전용)",
+  "short_name": "제조본부 보기",
+  "description": "생산관리팀 업무 프로그램 보기 전용 (소모품 구매, 소모성 원자재)",
+  "id": "./?view=1",
+  "start_url": "./?view=1",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6fa",
+  "theme_color": "#ffffff",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
